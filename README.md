@@ -26,7 +26,7 @@ wtftp_plus
  │  ├─test (Archive for the test data)
  │  └─train (Archive for the training data)
  ├─optDir
- │  └─train (Archive for the training data)
+ │  └─opt.json (JSON file for model arguments)
  └─pytorch_wavelets (The PyTorch implementation of wavelet transform)
 
 ```
