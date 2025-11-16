@@ -99,7 +99,6 @@ class Client:
         X = torch.stack([x ** degg for degg in range(deg, -1, -1)], dim=0).T
         W = torch.diag_embed(lAmbda ** torch.arange(0, self.args.pre_len, 1, dtype=torch.float64))
         mm = X.T @ W @ X + L2 * torch.diag_embed(torch.ones(deg + 1, dtype=torch.float64))
-        # mm[mm < 1e-15] = 0.
         mminv = torch.linalg.inv(mm)
         W_dsp = X @ mminv @ X.T @ W
         W_dsp = W_dsp.numpy()
@@ -115,7 +114,6 @@ class Client:
                                     collate_fn=self.data_set.collate) for i in range(3)]
         model.eval()
 
-        # import matplotlib.pyplot as plt
         if not self.client_args.mad:
             self.gene_pred(test_data, "AllStage")
         else:

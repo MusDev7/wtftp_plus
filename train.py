@@ -121,7 +121,6 @@ class Client:
                                     collate_fn=self.data_set.collate)
             start_time = time.perf_counter()
             batchs_len = len(train_data)
-            ce_loss_set = []
             loss_set = []
             high_loss_set = []
             low_loss_set = []
@@ -138,8 +137,6 @@ class Client:
                 logging.debug(f'Description: {self.args.comments}')
             for i, item in enumerate(train_data):
                 item = torch.from_numpy(item).float().to(self.device)
-                # item_copy = item[:, -self.args.pre_len:, :].clone()
-                item_copy = item[:, [-self.args.pre_len - 1, -1], :].clone()
 
                 obs = item[:, :-self.args.pre_len, :]
                 tgt = item[:, -self.args.pre_len:, :]
@@ -151,11 +148,8 @@ class Client:
                 lowWTCs, highWTCs = convert_WTCs(input_traj.transpose(1, 2),
                                                  level=self.args.level_decoder, wavelet=self.args.wavelet,
                                                  mode=self.args.extendMode)
-                # input_traj_lo = (tgt-obs[:,-1:,:].repeat(1,self.args.pre_len,1))/de
 
                 lo_init = (obs[:, -1:, :] - obs[:, -2:-1, :]).repeat(1, self.args.time_len_decoder[-1], 1)
-                # lo_init = torch.mean(input_traj, dim=1, keepdim=True).repeat(1, self.args.time_len_decoder[-1], 1)
-
 
                 # fed into the model
                 tgt_coeff_set, norm_de, (
@@ -171,14 +165,10 @@ class Client:
                 L2 = (epoch + 1) / (1 + self.opt["epoch"]) * 1e-4 * norm_de.mean(dim=0).sum()
 
                 total_loss = lowWTCs_loss + highWTCs_loss + L2
-                # total_loss = highWTCs_loss
 
                 optimizer.zero_grad()
                 total_loss.backward()
                 optimizer.step()
-
-                # pred_traj = reconvert_WTCs(pred_lowWTCs.transpose(1,2), pred_highWTCs.transpose(1,2),
-                #                            scales_idx, wavelet=self.opt["wavelet"], mode=self.opt["extendMode"])
 
                 print_str = f'Total Loss: {total_loss.item():.7f}, ' + \
                             f'Low-Freq Loss: {lowWTCs_loss.item():.7f}, ' + \
@@ -233,16 +223,12 @@ class Client:
                     output_set.append(pred_traj)
                     trg_set.append(tgt)
 
-                    # weight_attn["sasa_en"].append(torch.stack(weights_attn_sasa_allLayerEncoder,dim=0))
-                    # weight_attn["sa_en"].append(torch.stack(weights_attn_sa_allLayerEncoder,dim=0))
                     weight_attn["sasa_de"].append(torch.stack(weights_attn_sasa_allLayerDecoder, dim=0))
                     weight_attn["sa_de"].append(torch.stack(weights_attn_sa_allLayerDecoder, dim=0))
 
                 output_set = torch.cat(output_set, dim=0)
                 trg_set = torch.cat(trg_set, dim=0)
 
-                # weight_attn["sasa_en"] = torch.cat(weight_attn["sasa_en"], dim=1)
-                # weight_attn["sa_en"] = torch.cat(weight_attn["sa_en"], dim=1)
                 weight_attn["sasa_de"] = torch.cat(weight_attn["sasa_de"], dim=1)
                 weight_attn["sa_de"] = torch.cat(weight_attn["sa_de"], dim=1)
                 # cal loss
@@ -305,7 +291,6 @@ class Client:
                 except Exception as e:
                     self.log(e)
                     print(e)
-                # self.TX_logger.add_scalar('high_loss(dev)', torch.tensor(high_loss_set).mean().numpy(), epoch + 1)
             # save model
             self.saving_model(model, self.log_path, f'epoch_{epoch}.pt')
 

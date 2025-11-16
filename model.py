@@ -16,8 +16,6 @@ class DomainTransformDecoderLayer(nn.Module):
                 zip(time_len[:-1], time_len[1:])
             ])  # order from the low-level to the high-level
         self.ln2 = nn.LayerNorm(d_model)
-        # self.conv = nn.Conv1d(in_channels=d_model, out_channels=d_model, kernel_size=3, stride=1, padding=1,
-        #                       padding_mode='replicate')
         self.selfAttention = MHAttention(d_model=d_model, h=n_head, dropout=dropout)
         self.ln3 = nn.LayerNorm(d_model)
         self.learnableWaveletTransforms = \
@@ -54,7 +52,6 @@ class DomainTransformDecoderLayer(nn.Module):
         x_, weights_attn_sasa = self.scaleAwareSelfAttention(x, self.scale_idx)
         tmp = []
         for (i, j, ln) in zip(self.scale_idx[:-1], self.scale_idx[1:], self.ln1s):
-            # x[:, i:j, :] = ln(x[:, i:j, :])
             tmp.append(ln(x_[:, i:j, :]+x[:, i:j, :]))
         x = torch.cat(tmp, dim=1)
 
@@ -178,7 +175,6 @@ class WTFTP_plus(nn.Module):
                                                 )
 
     def forward(self, x, lo_init):
-        # prior_t, prior_t_allLayer, enhanced_t_allLayer, weights_attn_sasa_allLayerEncoder, weights_attn_sa_allLayerEncoder, norm_set_encoder= self.encoder(x)
         prior_t = self.encoder(x)
         tgt_coeff_set, coeff_set_allLayer, weights_attn_sasa_allLayerDecoder, weights_attn_sa_allLayerDecoder, norm_set_decoder\
             = self.decoder(
